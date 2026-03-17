@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Scheduler | Agri-SCM</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sora', sans-serif; }
+        body { 
+            background: radial-gradient(circle at center, #013220 0%, #001a11 100%); 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; color: white; overflow-x: hidden;
+        }
+        
+        .box { 
+            background: rgba(255,255,255,0.05); 
+            padding: 35px; border-radius: 30px; 
+            width: 450px; border: 1px solid rgba(255, 215, 0, 0.2); 
+            backdrop-filter: blur(15px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { color: #ffd700; text-align: center; margin-bottom: 25px; font-size: 22px; text-transform: uppercase; }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        label { display: block; font-size: 10px; margin-bottom: 6px; color: #ffd700; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
+        
+        input, select { 
+            width: 100%; padding: 12px; margin-bottom: 18px; 
+            border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); 
+            background: rgba(0,0,0,0.4); color: white; outline: none;
+            transition: 0.3s; font-size: 14px;
+        }
+        
+        input:focus, select:focus { border-color: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.2); }
+
+        .btn-save { 
+            width: 100%; padding: 16px; background: #ffd700; color: #013220; 
+            border: none; border-radius: 15px; font-weight: 800; 
+            cursor: pointer; font-size: 15px; transition: 0.4s;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-save:hover { background: white; transform: scale(1.02); box-shadow: 0 15px 30px rgba(0,0,0,0.4); }
+
+        .back { display: block; text-align: center; margin-top: 20px; color: rgba(255,255,255,0.5); text-decoration: none; font-size: 12px; transition: 0.3s; }
+        .back:hover { color: #ffd700; }
+
+        /* Error Shake Effect */
+        .error { border: 1px solid #ff4d4d !important; animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+        /* Success Overlay */
+        #loader {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,26,17,0.98); z-index: 1000;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <i class="fa-solid fa-satellite-dish fa-bounce" style="font-size: 60px; color: #ffd700;"></i>
+        <h2 style="margin-top: 30px; letter-spacing: 2px;">SYNCING AGRI-SCM LEDGER</h2>
+        <p style="color: #2ecc71; font-weight: 600;">Broadcasting to Field Supervisors...</p>
+    </div>
+
+    <div class="box">
+        <h2><i class="fa-solid fa-map-location-dot"></i> Route Dispatch</h2>
+        
+        <label>Track Token (Auto)</label>
+        <input type="text" id="sid" readonly style="color: #ffd700; font-weight: 800; background: rgba(255, 215, 0, 0.05);">
+        
+        <div class="form-row">
+            <div>
+                <label>Asset Unit</label>
+                <select id="vcl">
+                    <option>Truck-01 [H-Haul]</option>
+                    <option>Cargo Van-02 [Exp]</option>
+                    <option>Cold-Pickup-03</option>
+                </select>
+            </div>
+            <div>
+                <label>Priority</label>
+                <select id="priority">
+                    <option value="Normal">Normal</option>
+                    <option value="Urgent" style="color: #e74c3c;">Urgent</option>
+                    <option value="Low">Low</option>
+                </select>
+            </div>
+        </div>
+
+        <label>Destination Route</label>
+        <input type="text" id="rte" placeholder="e.g. Dhaka Central -> Bogura Hub">
+
+        <div class="form-row">
+            <div>
+                <label>Assigned Driver</label>
+                <input type="text" id="driver" placeholder="Name">
+            </div>
+            <div>
+                <label>Est. Departure</label>
+                <input type="time" id="eta">
+            </div>
+        </div>
+
+        <button class="btn-save" onclick="processSchedule()">
+            <i class="fa-solid fa-paper-plane"></i> INITIATE SHIPMENT
+        </button>
+        
+        <a href="field supervisor_dashboard.html" class="back">
+            <i class="fa-solid fa-arrow-left"></i> Discard and Return
+        </a>
+    </div>
+
+    <script>
+        // Generate Unique ID on load
+        window.onload = () => { 
+            document.getElementById('sid').value = "AS-SCM-" + Math.floor(1000 + Math.random() * 9000); 
+        };
+
+        function processSchedule() {
+            const fields = ['rte', 'eta', 'driver'];
+            let isValid = true;
+
+            fields.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el.value) {
+                    el.classList.add('error');
+                    isValid = false;
+                } else {
+                    el.classList.remove('error');
+                }
+            });
+
+            if(!isValid) return;
+
+            const sid = document.getElementById('sid').value;
+            const vcl = document.getElementById('vcl').value;
+            const rte = document.getElementById('rte').value;
+            const priority = document.getElementById('priority').value;
+            const driver = document.getElementById('driver').value;
+            const etaInput = document.getElementById('eta').value;
+
+            // Format Time
+            let [hours, minutes] = etaInput.split(':');
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12 || 12;
+            let formattedTime = hours + ":" + minutes + " " + ampm;
+
+            const newShipment = { 
+                id: sid, 
+                vehicle: vcl, 
+                route: rte, 
+                priority: priority,
+                driver: driver,
+                eta: formattedTime, 
+                status: 'Scheduled',
+                progress: 0,
+                timestamp: new Date().getTime()
+            };
+
+            // Data Operations
+            let activeShipments = JSON.parse(localStorage.getItem("activeShipments")) || [];
+            activeShipments.unshift(newShipment); 
+            localStorage.setItem("activeShipments", JSON.stringify(activeShipments));
+
+            // Animation
+            document.getElementById('loader').style.display = 'flex';
+
+            setTimeout(() => {
+                window.location.href = "field supervisor_dashboard.html";
+            }, 1800);
+        }
+
+        // Remove error class on type
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => input.classList.remove('error'));
+        });
+    </script>
+</body>
+</html>

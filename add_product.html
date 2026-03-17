@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Crop | Premium Agri-SCM</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing:border-box; margin:0; padding:0; font-family:'Sora',sans-serif;}
+body { background: radial-gradient(circle at top, #1a3c1a 0%, #0a1f0a 100%); min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; }
+
+.form-card {
+  background: linear-gradient(145deg, #f1c40f, #e67e22);
+  padding:40px;
+  border-radius:30px;
+  width:100%;
+  max-width:500px;
+  box-shadow:0 15px 30px rgba(0,0,0,0.3);
+  color:#1a3c1a;
+}
+
+h2 { text-align:center; margin-bottom:20px; color:#1a3c1a; }
+
+input, button {
+  width:100%;
+  padding:12px;
+  margin-bottom:15px;
+  border-radius:12px;
+  border:none;
+  font-size:14px;
+}
+
+input { border:1px solid #ddd; }
+
+input:focus { outline:none; border:2px solid #1a3c1a; }
+
+button {
+  background:#1a3c1a;
+  color:#f1c40f;
+  font-weight:600;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+button:hover { background:#27ae60; color:white; transform:translateY(-2px); }
+</style>
+</head>
+<body>
+
+<div class="form-card">
+  <h2>🌱 Add New Crop</h2>
+  <form id="addCropForm">
+    <input type="text" id="cropName" placeholder="Crop Name" required>
+    <input type="date" id="plantingDate" required>
+    <input type="date" id="harvestDate" required>
+    <input type="number" id="shelfLife" placeholder="Shelf Life (Days)" required>
+    <input type="text" id="packaging" placeholder="Packaging Type" required>
+    <button type="submit">Register Product</button>
+  </form>
+</div>
+
+<script>
+document.getElementById('addCropForm').addEventListener('submit', function(e){
+  e.preventDefault();
+
+  const cropName = document.getElementById('cropName').value;
+  const plantingDate = document.getElementById('plantingDate').value;
+  const harvestDate = document.getElementById('harvestDate').value;
+  const shelfLife = document.getElementById('shelfLife').value;
+  const packaging = document.getElementById('packaging').value;
+
+  let crops = JSON.parse(localStorage.getItem('crops') || '[]');
+  crops.push({ cropName, plantingDate, harvestDate, shelfLife, packaging });
+  localStorage.setItem('crops', JSON.stringify(crops));
+
+  // Redirect back to dashboard
+  window.location.href = 'agriculture_dashboard.html';
+});
+</script>
+
+</body>
+</html>

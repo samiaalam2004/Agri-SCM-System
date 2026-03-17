@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Agri-SCM | Elite Authorization</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sora', sans-serif; }
+  
+  body { 
+    background: radial-gradient(circle at center, #1a3c1a 0%, #050a05 100%); 
+    display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1.5rem;
+  }
+
+  .card {
+    background: linear-gradient(145deg, #f1c40f, #d4ac0d); 
+    border-radius: 40px; 
+    padding: 3rem 2.5rem; 
+    max-width: 480px; 
+    width: 100%;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.6), inset 0 0 20px rgba(255,255,255,0.3); 
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  h2 { font-size: 28px; margin-bottom: 0.5rem; color: #1a3c1a; font-weight: 800; letter-spacing: -1px; }
+  p { color: #4a3c00; margin-bottom: 2rem; font-size: 14px; font-weight: 500; opacity: 0.8; }
+
+  .form-group { text-align: left; margin-bottom: 1.2rem; position: relative; }
+  
+  label { 
+    font-size: 12px; color: #1a3c1a; display: block; margin-bottom: 8px; 
+    font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-left: 5px;
+  }
+
+  input {
+    width: 100%; padding: 15px 18px; border-radius: 15px; border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.9); font-size: 15px; outline: none; 
+    transition: 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  input:focus { background: #fff; border-color: #1a3c1a; box-shadow: 0 0 0 4px rgba(26, 60, 26, 0.1); }
+
+  /* Password Wrapper */
+  .pass-wrapper { position: relative; display: flex; align-items: center; }
+  .pass-wrapper i { position: absolute; right: 15px; color: #1a3c1a; cursor: pointer; opacity: 0.6; padding: 5px; }
+
+  /* Role Grid */
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+  .role-card { 
+    padding: 15px 10px; background: rgba(255, 255, 255, 0.25); border: 2px solid transparent;
+    border-radius: 18px; cursor: pointer; transition: 0.3s; text-align: center;
+    font-size: 12px; font-weight: 700; color: #1a3c1a; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .role-card i { font-size: 18px; }
+  .role-card.active { background: #1a3c1a; color: #f1c40f; border-color: #0a1f0a; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+
+  button {
+    width: 100%; padding: 18px; margin-top: 1rem; border: none; border-radius: 18px;
+    background: #1a3c1a; color: #f1c40f; font-size: 15px; font-weight: 700; 
+    cursor: pointer; transition: 0.4s; text-transform: uppercase; letter-spacing: 1px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  }
+
+  button:hover:not(:disabled) { background: #0b220b; transform: translateY(-3px); }
+  button:disabled { opacity: 0.8; cursor: not-allowed; }
+
+  #error-msg { color: #8b0000; font-size: 12px; margin-top: 10px; font-weight: 600; display: none; }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 400px) { .role-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Login to Agri-SCM System</h2>
+  <p>Premium System to Manage Identities in the Supply Chain</p>
+
+  <div class="form-group">
+    <label>Select Your Domain</label>
+    <div class="role-grid">
+      <div class="role-card active" data-role="farmer"><i class="fa-solid fa-seedling"></i> Farmer</div>
+      <div class="role-card" data-role="inventory"><i class="fa-solid fa-warehouse"></i> Inventory</div>
+      <div class="role-card" data-role="field"><i class="fa-solid fa-user-check"></i> Supervisor</div>
+      <div class="role-card" data-role="quality"><i class="fa-solid fa-vial-circle-check"></i> Quality</div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Access Key</label>
+    <input type="text" id="username" placeholder="Enter username" required>
+  </div>
+
+  <div class="form-group">
+    <label>Security Token</label>
+    <div class="pass-wrapper">
+      <input type="password" id="password" placeholder="••••••••" required>
+      <i class="fa-solid fa-eye" id="togglePass"></i>
+    </div>
+  </div>
+
+  <button id="loginBtn" onclick="handleLogin()">Authorize Identity</button>
+  <p id="error-msg">❌ Access Denied! Check Credentials.</p>
+</div>
+
+<script>
+// Role Selection
+const roles = document.querySelectorAll('.role-card');
+roles.forEach(role => {
+  role.addEventListener('click', () => {
+    roles.forEach(r => r.classList.remove('active'));
+    role.classList.add('active');
+  });
+});
+
+// Password Visibility Toggle
+const togglePass = document.querySelector('#togglePass');
+const passInput = document.querySelector('#password');
+
+togglePass.addEventListener('click', () => {
+  const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+  passInput.setAttribute('type', type);
+  togglePass.classList.toggle('fa-eye-slash');
+});
+
+// Login Logic
+function handleLogin() {
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const error = document.getElementById('error-msg');
+  const activeRole = document.querySelector('.role-card.active').getAttribute('data-role');
+
+  if (!user || !pass) {
+    error.innerText = "⚠️ Fields cannot be empty!";
+    error.style.display = "block";
+    return;
+  }
+
+  // Animation & Processing
+  error.style.display = "none";
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...`;
+
+  setTimeout(() => {
+    let targetPage = '';
+    switch(activeRole) {
+      case 'farmer': targetPage = 'agriculture_dashboard.html'; break;
+      case 'inventory': targetPage = 'inventory-dashboard.html'; break;
+      case 'field': targetPage = 'field supervisor_dashboard.html'; break;
+      case 'quality': targetPage = 'product_quality.html'; break;
+      default: targetPage = 'overview.html';
+    }
+    
+    // Success Redirect
+    window.location.href = targetPage;
+  }, 1500);
+}
+
+// Enter Key Support
+document.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') handleLogin();
+});
+</script>
+
+</body>
+</html>
