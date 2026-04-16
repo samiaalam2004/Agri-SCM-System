@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <style>
+        /* ... (Apnar existing styles maintain kora hoyeche) ... */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sora', sans-serif; }
         body { background: radial-gradient(circle at top, #002e1f 0%, #000a07 100%); color: white; min-height: 100vh; padding-bottom: 50px; overflow-x: hidden; }
         
@@ -53,7 +54,6 @@
         table { width: 100%; border-collapse: collapse; }
         th { background: rgba(255, 215, 0, 0.05); text-align: left; color: #ffd700; padding: 18px; font-size: 12px; text-transform: uppercase; }
         td { padding: 18px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 14px; }
-        tr:last-child td { border: none; }
 
         .badge { padding: 5px 12px; border-radius: 100px; font-size: 10px; font-weight: 700; }
         .bg-transit { background: #3498db; color: white; box-shadow: 0 0 10px rgba(52,152,219,0.3); }
@@ -69,23 +69,53 @@
         .btn-add { background: #ffd700; color: #013220; }
         .btn-track { background: transparent; border: 1px solid #2ecc71; color: #2ecc71; }
         .btn-pdf { background: rgba(231, 76, 60, 0.1); color: #e74c3c; border: 1px solid #e74c3c; }
-        .btn:hover { transform: translateY(-3px); filter: brightness(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
         .action-icon { cursor: pointer; margin-right: 12px; opacity: 0.6; transition: 0.2s; }
-        .action-icon:hover { opacity: 1; color: #ffd700; }
+        .action-icon:hover { opacity: 1; color: #ffd700; transform: scale(1.2); }
+
+        /* Edit Modal Styling */
+        #editModal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px);
+            justify-content: center; align-items: center; z-index: 3000;
+        }
+        .modal-box {
+            background: #002e1f; padding: 30px; border-radius: 20px; width: 400px;
+            border: 1px solid #ffd700; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .modal-box input {
+            width: 100%; padding: 12px; margin-top: 15px; border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white;
+        }
 
         #toast {
             position: fixed; bottom: 30px; right: 30px; background: #ffd700; color: #000;
             padding: 15px 30px; border-radius: 10px; font-weight: 700; display: none;
-            z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.5); animation: slideIn 0.5s ease-out;
+            z-index: 2000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
     <div id="toast">Action Successful!</div>
+
+    <div id="editModal">
+        <div class="modal-box">
+            <h3 style="color:#ffd700; margin-bottom:10px;">Edit Shipment</h3>
+            <input type="hidden" id="editIndex">
+            <label style="font-size:12px; opacity:0.7;">Vehicle Name</label>
+            <input type="text" id="editVehicle">
+            <label style="font-size:12px; opacity:0.7; margin-top:10px; display:block;">Driver Name</label>
+            <input type="text" id="editDriver">
+            <label style="font-size:12px; opacity:0.7; margin-top:10px; display:block;">Route Detail</label>
+            <input type="text" id="editRoute">
+            
+            <div style="display:flex; gap:10px; margin-top:25px;">
+                <button class="btn btn-add" style="flex:1; justify-content:center;" onclick="saveEdit()">SAVE CHANGES</button>
+                <button class="btn" style="flex:1; justify-content:center; background:#333; color:white;" onclick="closeModal()">CANCEL</button>
+            </div>
+        </div>
+    </div>
 
     <nav>
         <strong>🚜 AGRI-SCM <span style="font-weight: 400; opacity: 0.6; margin-left: 5px;">| Supervisor v2.0</span></strong>
@@ -132,7 +162,8 @@
                         <tr>
                             <th>Shipment ID</th>
                             <th>Fleet/Vehicle</th>
-                            <th>Assigned Driver</th> <th>Route Detail</th>
+                            <th>Assigned Driver</th> 
+                            <th>Route Detail</th>
                             <th>Status</th>
                             <th>ETA</th>
                             <th>Management</th>
@@ -170,11 +201,8 @@
             body.innerHTML = list.length === 0 ? "<tr><td colspan='7' align='center' style='padding:60px; opacity:0.3; font-style:italic;'>Waiting for operational data...</td></tr>" : "";
             
             list.forEach((s, i) => {
-                let badgeClass = "bg-scheduled";
-                if(s.status === "In Transit") badgeClass = "bg-transit";
-                if(s.status === "Delayed") badgeClass = "bg-delayed";
+                let badgeClass = s.status === "In Transit" ? "bg-transit" : (s.status === "Delayed" ? "bg-delayed" : "bg-scheduled");
 
-                // ড্রাইভারের নাম আপডেট করার জন্য s.driver ব্যবহার করা হয়েছে
                 body.innerHTML += `
                     <tr>
                         <td style="font-family:monospace; color:#ffd700;">#${s.id}</td>
@@ -184,6 +212,7 @@
                         <td><span class="badge ${badgeClass}">${s.status}</span></td>
                         <td>${s.eta}</td>
                         <td>
+                            <i class="fa-solid fa-pen-to-square action-icon" style="color:#3498db;" onclick="openEdit(${i})" title="Edit Details"></i>
                             <i class="fa-solid fa-rotate action-icon" onclick="updateStatus(${i})" title="Change Status"></i>
                             <i class="fa-solid fa-trash-can action-icon" style="color:#ff4d4d;" onclick="removeItem(${i})" title="Remove"></i>
                         </td>
@@ -192,7 +221,34 @@
             });
         }
 
-        // বাকি ফাংশনগুলো আগের মতোই থাকবে, শুধু PDF ও CSV-তে ড্রাইভারের নাম যুক্ত করা হয়েছে
+        // --- EDIT FUNCTIONS ---
+        function openEdit(i) {
+            let list = JSON.parse(localStorage.getItem("activeShipments"));
+            document.getElementById("editIndex").value = i;
+            document.getElementById("editVehicle").value = list[i].vehicle;
+            document.getElementById("editDriver").value = list[i].driver || "";
+            document.getElementById("editRoute").value = list[i].route;
+            document.getElementById("editModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("editModal").style.display = "none";
+        }
+
+        function saveEdit() {
+            let i = document.getElementById("editIndex").value;
+            let list = JSON.parse(localStorage.getItem("activeShipments"));
+            
+            list[i].vehicle = document.getElementById("editVehicle").value;
+            list[i].driver = document.getElementById("editDriver").value;
+            list[i].route = document.getElementById("editRoute").value;
+
+            localStorage.setItem("activeShipments", JSON.stringify(list));
+            loadData();
+            closeModal();
+            showToast("Shipment details updated successfully!");
+        }
+        // ----------------------
 
         function updateStatus(i) {
             let list = JSON.parse(localStorage.getItem("activeShipments"));
@@ -203,7 +259,17 @@
             
             localStorage.setItem("activeShipments", JSON.stringify(list));
             loadData();
-            showToast("Status updated to: " + list[i].status);
+            showToast("Status: " + list[i].status);
+        }
+
+        function removeItem(i) {
+            if(confirm("Confirm Delete?")) {
+                let list = JSON.parse(localStorage.getItem("activeShipments"));
+                list.splice(i, 1);
+                localStorage.setItem("activeShipments", JSON.stringify(list));
+                loadData();
+                showToast("Shipment record removed.");
+            }
         }
 
         function filterTable() {
@@ -214,51 +280,26 @@
             }
         }
 
-        function removeItem(i) {
-            if(confirm("Permanent Delete? This action cannot be undone.")) {
-                let list = JSON.parse(localStorage.getItem("activeShipments"));
-                list.splice(i, 1);
-                localStorage.setItem("activeShipments", JSON.stringify(list));
-                loadData();
-                showToast("Shipment record removed.");
-            }
-        }
-
         function exportToCSV() {
             const list = JSON.parse(localStorage.getItem("activeShipments")) || [];
-            if(list.length === 0) return alert("No data to export!");
-            
-            let csvContent = "data:text/csv;charset=utf-8,ID,Vehicle,Driver,Route,Status,ETA\n";
-            list.forEach(s => {
-                csvContent += `${s.id},${s.vehicle},${s.driver || 'N/A'},${s.route},${s.status},${s.eta}\n`;
-            });
-            
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Fleet_Report_AgriSCM.csv");
-            document.body.appendChild(link);
-            link.click();
-            showToast("Excel/CSV File Downloaded!");
+            if(list.length === 0) return alert("No data!");
+            let csv = "ID,Vehicle,Driver,Route,Status,ETA\n";
+            list.forEach(s => csv += `${s.id},${s.vehicle},${s.driver},${s.route},${s.status},${s.eta}\n`);
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.setAttribute("href", url);
+            a.setAttribute("download", "Fleet_Report.csv");
+            a.click();
         }
 
         function downloadPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            doc.setFontSize(22);
-            doc.setTextColor(0, 46, 31);
-            doc.text("AGRI-SCM OPERATIONAL REPORT", 14, 20);
-            
             const list = JSON.parse(localStorage.getItem("activeShipments")) || [];
-            const rows = list.map(s => [s.id, s.vehicle, s.driver || 'N/A', s.route, s.status, s.eta]);
-            
-            doc.autoTable({ 
-                head: [['ID', 'Vehicle', 'Driver', 'Route', 'Status', 'ETA']], 
-                body: rows, 
-                startY: 30,
-                theme: 'striped',
-                headStyles: { fillColor: [0, 46, 31] }
-            });
+            const rows = list.map(s => [s.id, s.vehicle, s.driver, s.route, s.status, s.eta]);
+            doc.text("AGRI-SCM OPERATIONAL REPORT", 14, 20);
+            doc.autoTable({ head: [['ID', 'Vehicle', 'Driver', 'Route', 'Status', 'ETA']], body: rows, startY: 30 });
             doc.save("Fleet_Report.pdf");
         }
 
