@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
+    /* ... (Previous styles remain same) ... */
     * { box-sizing: border-box; margin:0; padding:0; font-family:'Sora',sans-serif; }
     
     body { 
@@ -16,7 +17,6 @@
         padding-bottom: 50px;
     }
 
-    /* Modern Navigation */
     nav {
         background: rgba(10, 31, 10, 0.9);
         backdrop-filter: blur(15px);
@@ -40,10 +40,8 @@
     }
     nav .nav-links a:hover { color: #f1c40f; }
 
-    /* Dashboard Container */
     .container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
 
-    /* Stats Section with Hover Effect */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-bottom: 40px; }
     .stat-card { 
         background: linear-gradient(145deg, #f1c40f, #d4ac0d); 
@@ -58,7 +56,6 @@
     .stat-card h3 { color: #1a3c1a; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
     .stat-card p { font-size: 32px; font-weight: 800; color: #1a3c1a; }
 
-    /* Main Content Area */
     .card { 
         background: rgba(255, 255, 255, 0.98); 
         padding: 40px; 
@@ -76,7 +73,6 @@
     }
     h2 { color: #1a3c1a; font-weight: 800; font-size: 24px; }
 
-    /* Search and Add Buttons */
     .search-box { position: relative; }
     .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; }
     #searchInput { 
@@ -103,7 +99,6 @@
     }
     .add-btn:hover { background: #27ae60; color: white; transform: scale(1.05); }
 
-    /* Premium Table Styling */
     .table-responsive { overflow-x: auto; }
     table { width: 100%; border-collapse: separate; border-spacing: 0 12px; }
     th { padding: 15px; text-align: left; color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
@@ -114,7 +109,6 @@
     
     tr:hover td { background: #f1f8f1; border-color: #27ae60; }
 
-    /* Status Badge */
     .status-badge { 
         padding: 6px 14px; 
         border-radius: 12px; 
@@ -125,14 +119,26 @@
         border: 1px solid #c8e6c9;
     }
 
-    /* Delete Button */
+    /* Action Icons */
+    .action-icons { display: flex; gap: 15px; justify-content: center; }
+    
+    .edit-btn { 
+        color: #3498db; 
+        cursor: pointer; 
+        font-size: 18px; 
+        transition: 0.3s; 
+        padding: 8px;
+        border-radius: 8px;
+    }
+    .edit-btn:hover { background: rgba(52, 152, 219, 0.1); transform: scale(1.2); }
+
     .delete-btn { 
         color: #e74c3c; 
         cursor: pointer; 
         font-size: 18px; 
         transition: 0.3s; 
-        padding: 10px;
-        border-radius: 10px;
+        padding: 8px;
+        border-radius: 8px;
     }
     .delete-btn:hover { background: rgba(231, 76, 60, 0.1); color: #c0392b; transform: rotate(15deg); }
 
@@ -191,7 +197,7 @@
                         <th>Harvest Date</th>
                         <th>Shelf Life</th>
                         <th>Current Status</th>
-                        <th>Action</th>
+                        <th style="text-align: center;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -204,7 +210,6 @@
 <script>
 const tableBody = document.getElementById('tableBody');
 
-// Initialize with sophisticated default data if local storage is empty
 function initData() {
     if(!localStorage.getItem('crops')){
         const defaultCrops = [
@@ -218,12 +223,10 @@ function initData() {
     loadCrops();
 }
 
-// Render Table Function
 function loadCrops(){
     const crops = JSON.parse(localStorage.getItem('crops') || '[]');
     tableBody.innerHTML = "";
 
-    // Stats Logic
     document.getElementById('totalCrops').textContent = crops.length;
     const maxShelf = crops.length > 0 ? Math.max(...crops.map(c => parseInt(c.shelfLife))) : 0;
     document.getElementById('avgShelf').textContent = maxShelf + " Days";
@@ -237,7 +240,10 @@ function loadCrops(){
                 <td><i class="fa-solid fa-hourglass-half" style="color:#3498db; margin-right:8px;"></i>${crop.shelfLife} Days</td>
                 <td><span class="status-badge">Ready for Transport</span></td>
                 <td>
-                    <i class="fa-solid fa-trash-can delete-btn" title="Delete Batch" onclick="deleteCrop(${index})"></i>
+                    <div class="action-icons">
+                        <i class="fa-solid fa-pen-to-square edit-btn" title="Edit Batch" onclick="editCrop(${index})"></i>
+                        <i class="fa-solid fa-trash-can delete-btn" title="Delete Batch" onclick="deleteCrop(${index})"></i>
+                    </div>
                 </td>
             </tr>
         `;
@@ -245,7 +251,12 @@ function loadCrops(){
     });
 }
 
-// Delete Logic
+// Edit Logic - Index pass kore edit page-e pathano
+function editCrop(index) {
+    // Apni jodi chandan, edit page-e data niye jete:
+    window.location.href = `add_product.html?edit=${index}`;
+}
+
 function deleteCrop(index){
     if(confirm("Warning: This will permanently remove this batch record. Proceed?")){
         let crops = JSON.parse(localStorage.getItem('crops') || '[]');
@@ -255,7 +266,6 @@ function deleteCrop(index){
     }
 }
 
-// Search/Filter Logic
 function filterTable(){
     let input = document.getElementById("searchInput").value.toLowerCase();
     let rows = tableBody.getElementsByTagName("tr");
@@ -265,7 +275,6 @@ function filterTable(){
     }
 }
 
-// Run on Load
 window.onload = initData;
 </script>
 
